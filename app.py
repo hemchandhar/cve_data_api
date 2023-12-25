@@ -56,8 +56,6 @@ def get_cve_by_id(cve_id):
     return filter_cves_by_id(cve_id)
 
 # Endpoint to filter CVEs by scores or last modified
-
-
 @app.route("/filter_cves", methods=["GET"])
 def filter_cves():
     base_score = request.args.get("base_score")

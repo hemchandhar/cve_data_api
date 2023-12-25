@@ -1,3 +1,4 @@
+from bson import ObjectId
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
@@ -35,18 +36,78 @@ def sync_cves_to_mongo(staging_data):
 
 
 def filter_cves_by_id(cve_id):
-    # Implementation to filter CVEs by CVE ID
-    # ...
-    return True
+    """
+    Filter CVEs by CVE ID.
+
+    Args:
+        cve_id (str): CVE ID to filter.
+
+    Returns:
+        dict: CVE details if found, or None if not found.
+    """
+    response = {}
+    try:
+        # Convert the provided cve_id to ObjectId
+        # Search for the CVE in the MongoDB collection by ObjectId
+        result = cve_collection.find_one({"id": cve_id}, {"_id": 0})
+        result['_id'] = str(result['_id'])
+        response = {
+            "status": 200,
+            "statusMessage": f"CVE Details has been fetched successfully for the CVE ID: {cve_id}",
+            "response": result
+        }
+        return response
+    except Exception as e:
+        # Handle the exception (e.g., invalid ObjectId)
+        print(f"Error: {e}")
+        response = {
+            "status": 400,
+            "statusMessage": "Error in retrieving the CVE Details",
+            "error": e
+        }
+        return response
 
 
 def filter_cves_by_scores(base_score):
-    # Implementation to filter CVEs by scores
-    # ...
-    return True
+    """
+   Filter CVEs by base score.
+
+   Args:
+       base_score (float): Base score to filter.
+
+   Returns:
+       list: List of CVEs with a base score greater than or equal to the provided score.
+   """
+    response = {}
+
+    # Search for CVEs in the MongoDB collection with a base score greater than or equal to the provided score
+    results = cve_collection.find(
+        {"metrics.cvssMetricV2.cvssData.baseScore": {"$gte": base_score}, }, {"_id": 0})
+
+    response = {
+        "status": "200",
+        "statusMessage": f"CVE Details has been fetched successfully based on the Base score greater than or equal to {base_score}",
+        "response": list(results)
+    }
+
+    return response
 
 
 def filter_cves_by_last_modified(days_modified):
-    # Implementation to filter CVEs by last modified date
-    # ...
-    return True
+    """
+   Filter CVEs by last modified date within a specified number of days.
+
+   Args:
+       days_modified (int): Number of days for filtering.
+
+   Returns:
+       list: List of CVEs modified within the specified number of days.
+   """
+    # Calculate the date threshold by subtracting the specified number of days from the current date
+    threshold_date = datetime.utcnow() - timedelta(days=days_modified)
+
+    # Search for CVEs in the MongoDB collection modified within the specified number of days
+    results = cve_collection.find(
+        {"lastModifiedDate": {"$gte": threshold_date}})
+
+    return list(results)
