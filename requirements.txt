@@ -3,3 +3,5 @@ pymongo
 requests
 flask-swagger-ui
 python-crontab
+flasgger
+pyopenssl

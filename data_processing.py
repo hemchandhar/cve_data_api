@@ -2,9 +2,9 @@ from bson import ObjectId
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
-mongo_client = MongoClient("mongodb://localhost:27017/")
-db = mongo_client["cve_database"]
-cve_collection = db["cves"]
+# mongo_client = MongoClient("mongodb://localhost:27017/")
+# db = mongo_client["cve_database"]
+# cve_collection = db["cves"]
 
 # Implementation to synchronize CVEs to MongoDB
 

@@ -1,18 +1,52 @@
 from flask import Flask, request
 from nvd_api import fetch_cves_from_nvd
 from data_processing import sync_cves_to_mongo, filter_cves_by_id, filter_cves_by_scores, filter_cves_by_last_modified
-from api_documentation import swaggerui_blueprint
+from flasgger import Swagger
+
 
 app = Flask(__name__)
 
+swagger = Swagger(app)
+
 # Registering the Swagger UI blueprint
-app.register_blueprint(swaggerui_blueprint, url_prefix="/swagger")
+# app.register_blueprint(swaggerui_blueprint, url_prefix="/swagger")
 
 # Endpoint to fetch and sync CVEs from NVD API to MongoDB
 
 
 @app.route("/sync_cves", methods=["POST"])
 def sync_cves():
+    """
+    Sync CVEs from NVD API's.
+
+    ---
+    tags:
+      - CVE Sync
+    parameters:
+      - name: full_load
+        in: formData
+        type: boolean
+        required: true
+        description: Set to true for a full load.
+      - name: pubStartDate
+        in: formData
+        type: string
+        description: Start date for syncing.
+      - name: resultsPerPage
+        in: formData
+        type: integer
+        description: Number of results per page (default-2000).
+      - name: startIndex
+        in: formData
+        type: integer
+        description: Start index for paging (default-0).
+    responses:
+      200:
+        description: Sync successful
+      400:
+        description: Error in parameters
+    """
+     
     req_parameters = request.json
 
     # Required Parameter to check for full load
@@ -53,11 +87,50 @@ def sync_cves():
 
 @app.route("/get_cve/<cve_id>", methods=["GET"])
 def get_cve_by_id(cve_id):
+    """
+    Get CVE details by CVE ID.
+
+    ---
+    tags:
+      - CVE Details
+    parameters:
+      - name: cve_id
+        in: path
+        type: string
+        required: true
+        description: The CVE ID.
+    responses:
+      200:
+        description: CVE details
+      404:
+        description: CVE not found
+    """
     return filter_cves_by_id(cve_id)
 
 # Endpoint to filter CVEs by scores or last modified
 @app.route("/filter_cves", methods=["GET"])
 def filter_cves():
+    """
+    Filter CVEs by scores or last modified date.
+
+    ---
+    tags:
+      - CVE Filtering
+    parameters:
+      - name: base_score
+        in: query
+        type: number
+        description: Filter CVEs by base score.
+      - name: days_modified
+        in: query
+        type: integer
+        description: Filter CVEs by last modified date within N days.
+    responses:
+      200:
+        description: Filtered CVEs
+      400:
+        description: Invalid filter parameters
+    """
     base_score = request.args.get("base_score")
     days_modified = request.args.get("days_modified")
 
