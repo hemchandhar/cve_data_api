@@ -2,9 +2,9 @@ from bson import ObjectId
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
-# mongo_client = MongoClient("mongodb://localhost:27017/")
-# db = mongo_client["cve_database"]
-# cve_collection = db["cves"]
+mongo_client = MongoClient("mongodb://localhost:27017/")
+db = mongo_client["cve_database"]
+cve_collection = db["cves"]
 
 # Implementation to synchronize CVEs to MongoDB
 
@@ -63,7 +63,6 @@ def filter_cves_by_id(cve_id):
         # Convert the provided cve_id to ObjectId
         # Search for the CVE in the MongoDB collection by ObjectId
         result = cve_collection.find_one({"id": cve_id}, {"_id": 0})
-        result['_id'] = str(result['_id'])
         response = {
             "statusCode": 200,
             "statusMessage": f"CVE Details has been fetched successfully for the CVE ID: {cve_id}",
@@ -98,14 +97,14 @@ def filter_cves_by_scores(base_score):
             {"metrics.cvssMetricV2.cvssData.baseScore": {"$gte": base_score}, }, {"_id": 0})
 
         response = {
-            "statusCode": "200",
+            "statusCode": 200,
             "statusMessage": f"CVE Details has been fetched successfully based on the Base score greater than or equal to {base_score}",
             "response": list(results)
         }
-    
+
     except Exception as e:
         response = {
-            "statusCode": "500",
+            "statusCode": 500,
             "statusMessage": "Internal Server Error happened on the filter cves by scores API. Please contact the Adminstrator",
             "error": str(e)
         }
@@ -132,14 +131,14 @@ def filter_cves_by_last_modified(days_modified):
         {"lastModifiedDate": {"$gte": threshold_date}})
 
         response = {
-            "statusCode": "200",
-            "statusMessage": f"CVE Details has been fetched successfully based on the Base score greater than or equal to {base_score}",
+            "statusCode": 200,
+            "statusMessage": f"CVE Details has been fetched successfully based on the Days Modified: {days_modified}",
             "response": list(results)
         }
     
     except Exception as e:
         response = {
-            "statusCode": "500",
+            "statusCode": 500,
             "statusMessage": "Internal Server Error happened on the filter cves by Last Modified date API. Please contact the Adminstrator",
             "error": str(e)
         }

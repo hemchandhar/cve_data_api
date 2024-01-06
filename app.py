@@ -42,9 +42,10 @@ def sync_cves():
         description: Start index for paging (default-0).
     responses:
       200:
-        description: Sync successful
-      400:
-        description: Error in parameters
+        description: statusCode:200, statusMessage:Successfully Fectched the data from CVE API, response:Response from DB whether it is successfull load
+      500:
+        description: statusCode:500, statusMessage:Internal Server Error happened on the Sync CVE from NVE API to database. Please contact the Adminstrator, error:Internal Error Happened will return
+
     """
     res = {}
     try:
@@ -77,33 +78,35 @@ def sync_cves():
 
         response = fetch_cves_from_nvd(
             pubStartDate=pubStartDate, resultsPerPage=resultsPerPage, startIndex=startIndex, full_load=full_load)
+
         if response['statusCode'] == 200:
             sync_res = sync_cves_to_mongo(response['response'])
-            if response['statusCode'] == 200:
+            print(sync_res)
+            if sync_res['statusCode'] == 200:
                 res = {
-                "statusCode": "200",
-                "statusMessage": "Successfully Fectched the data from CVE API",
-                "response": sync_res
+                    "statusCode": "200",
+                    "statusMessage": "Successfully Fectched the data from CVE API",
+                    "response": sync_res
                 }
             else:
-                 res = {
-                "statusCode": "500",
-                "statusMessage": "Internal Server Error in Syncing the CVE's to Database. Please Contact your adminstrator",
-                "error":response['error']
+                res = {
+                    "statusCode": "500",
+                    "statusMessage": "Internal Server Error in Syncing the CVE's to Database. Please Contact your adminstrator",
+                    "error": response['error']
                 }
         else:
             res = {
                 "statusCode": "500",
                 "statusMessage": "Internal Server Error in Fetching the CVE's from NVD API. Please Contact your adminstrator",
-                "error":response['error']
-                }
+                "error": response['error']
+            }
         return res
     except Exception as e:
         res = {
-                "statusCode": "500",
-                "statusMessage": "Internal Server Error happened on the Sync CVE from NVE API to database. Please contact the Adminstrator",
-                "error": str(e)
-                }
+            "statusCode": "500",
+            "statusMessage": "Internal Server Error happened on the Sync CVE from NVE API to database. Please contact the Adminstrator",
+            "error": str(e)
+        }
         return res
 
 
@@ -133,25 +136,27 @@ def get_cve_by_id(cve_id):
         response = filter_cves_by_id(cve_id)
         if response['statusCode'] == 200:
             res = {
-                "statusCode": "200",
+                "statusCode": 200,
                 "statusMessage": response['statusMessage'],
-                "response": response
-                }
+                "response": response['response']
+            }
         else:
             res = {
-                "statusCode": "500",
+                "statusCode": 500,
                 "statusMessage": response['statusMessage'],
                 "error": response['error']
-                }
+            }
     except Exception as e:
         res = {
-                "statusCode": "500",
-                "statusMessage": "Internal Server Error in retrieving the CVE Details by Id. Please contact your Adminstrator",
-                "error": str(e)
-                }
+            "statusCode": 500,
+            "statusMessage": "Internal Server Error in retrieving the CVE Details by Id. Please contact your Adminstrator",
+            "error": str(e)
+        }
     return res
 
 # Endpoint to filter CVEs by scores or last modified
+
+
 @app.route("/filter_cves", methods=["GET"])
 def filter_cves():
     """
@@ -171,56 +176,58 @@ def filter_cves():
         description: Filter CVEs by last modified date within N days.
     responses:
       200:
-        description: Filtered CVEs
+        description:  statusCode:200, statusMessage:Succssfully Filtered the values as per the Input, response:Response consists of Filtered values
+
       400:
-        description: Invalid filter parameters
+        description: statusCode":400, statusMessage:"Internal Filter Parameters. Please Try again!",
     """
     res = {}
-    try:
-        base_score = request.args.get("base_score")
-        days_modified = request.args.get("days_modified")
-
-        if base_score:
-            response = filter_cves_by_scores(float(base_score))
-            if response['statusCode'] == 200:
-                res = {
-                    "statusCode": "200",
-                    "statusMessage": response['statusMessage'],
-                    "response": response
-                    }
-            else:
-                res = {
-                    "statusCode": "500",
-                    "statusMessage": response['statusMessage'],
-                    "error": response['error']
-                    }
-        elif days_modified:
-            response = filter_cves_by_last_modified(int(days_modified))
-            if response['statusCode'] == 200:
-                res = {
-                    "statusCode": "200",
-                    "statusMessage": response['statusMessage'],
-                    "response": response
-                    }
-            else:
-                res = {
-                    "statusCode": "500",
-                    "statusMessage": response['statusMessage'],
-                    "error": response['error']
-                    }
+    try:    
+      base_score = request.args.get("base_score")
+      days_modified = request.args.get("days_modified")
+      
+      if base_score != None:
+        response = filter_cves_by_scores(float(base_score))
+        if response['statusCode'] == 200:
+            res = {
+                "statusCode": "200",
+                "statusMessage": response['statusMessage'],
+                "response": response["response"]
+            }
         else:
             res = {
-                "statusCode": "400",
-                "statusMessage": "Internal Filter Parameters. Please Try again!",
-                }
+                "statusCode": "500",
+                "statusMessage": response['statusMessage'],
+                "error": response['error']
+            }
+      elif days_modified != None:
+        response = filter_cves_by_last_modified(int(days_modified))
+        if response['statusCode'] == 200:
+            res = {
+                "statusCode": 200,
+                "statusMessage": response['statusMessage'],
+                "response": response["response"]
+            }
+        else:
+            res = {
+                "statusCode": 500,
+                "statusMessage": response['statusMessage'],
+                "error": response['error']
+            }
+      else:
+        res = {
+            "statusCode": 400,
+            "statusMessage": "Internal Filter Parameters. Please Try again!",
+        }
     except Exception as e:
         res = {
-                "statusCode": "500",
-                "statusMessage": "Internal Server Error in Filtering the CVE's. Please contact your Adminstrator",
-                "error": str(e)
-                }
+            "statusCode": "500",
+            "statusMessage": "Internal Server Error in Filtering the CVE's. Please contact your Adminstrator",
+            "error": str(e)
+        }
 
     return res
+
 
 if __name__ == "__main__":
     app.run(debug=True)
